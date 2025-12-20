@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Agendamento - Barbearia</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: #fff;
+  padding: 20px;
+}
+
+.box {
+  max-width: 480px;
+  margin: auto;
+  background: #1e1e1e;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+h2 { text-align: center; }
+
+label {
+  display: block;
+  margin-top: 10px;
+}
+
+input, select, button {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border-radius: 5px;
+  border: none;
+}
+
+button {
+  background: #27ae60;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.horarios {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.hora {
+  background: #333;
+  padding: 8px;
+  text-align: center;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.hora:hover:not(.ocupada) {
+  background: #27ae60;
+}
+
+.hora.selecionada {
+  background: #27ae60;
+  font-weight: bold;
+}
+
+.hora.ocupada {
+  background: #555;
+  color: #aaa;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.agendamento {
+  background: #2c2c2c;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.dataTitulo {
+  margin-top: 20px;
+  font-weight: bold;
+  color: #27ae60;
+}
+
+.cancelar {
+  background: #c0392b;
+  margin-top: 8px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- CLIENTE -->
+<div class="box" id="cliente">
+  <h2>Agendar Corte</h2>
+
+  <label>Nome</label>
+  <input type="text" id="nome">
+
+  <label>Serviço</label>
+  <select id="servico">
+    <option>Corte - R$ 35</option>
+    <option>Corte + Barba - R$ 40</option>
+  </select>
+
+  <label>Data</label>
+  <input type="date" id="data" onchange="gerarHorarios()">
+
+  <label>Horários disponíveis</label>
+  <div class="horarios" id="horarios"></div>
+
+  <button onclick="agendar()">Confirmar Agendamento</button>
+</div>
+
+<!-- ADMIN -->
+<div class="box" id="admin" style="display:none">
+  <h2>Agenda</h2>
+  <button onclick="exportar()">Exportar agenda</button>
+  <div id="lista"></div>
+</div>
+
+<script>
+const SENHA_ADMIN = "1234";
+let horarioSelecionado = null;
+
+const params = new URLSearchParams(window.location.search);
+const isAdmin = params.has("admin");
+
+if (isAdmin) {
+  const senha = prompt("Digite a senha do admin:");
+  if (senha !== SENHA_ADMIN) {
+    alert("Senha incorreta");
+    window.location.href = window.location.pathname;
+  } else {
+    document.getElementById("cliente").style.display = "none";
+    document.getElementById("admin").style.display = "block";
+    carregarAgenda();
+  }
+}
+
+function gerarHorarios() {
+  const container = document.getElementById("horarios");
+  container.innerHTML = "";
+  horarioSelecionado = null;
+
+  const data = document.getElementById("data").value;
+  if (!data) return;
+
+  const agenda = JSON.parse(localStorage.getItem("agenda")) || [];
+  const agora = new Date();
+
+  for (let h = 9; h < 19; h++) {
+    for (let m of [0, 30]) {
+      const horaStr = `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+      const dataHora = new Date(`${data}T${horaStr}`);
+
+      // Bloqueio de 2h
+      if ((dataHora - agora) / 36e5 < 2) continue;
+
+      const ocupado = agenda.some(a =>
+        Math.abs(dataHora - new Date(a.iso)) / 60000 < 30
+      );
+
+      const div = document.createElement("div");
+      div.className = "hora";
+      div.textContent = horaStr;
+
+      if (ocupado) {
+        div.classList.add("ocupada");
+      } else {
+        div.onclick = () => {
+          document.querySelectorAll(".hora").forEach(h => h.classList.remove("selecionada"));
+          div.classList.add("selecionada");
+          horarioSelecionado = dataHora;
+        };
+      }
+
+      container.appendChild(div);
+    }
+  }
+}
+
+function agendar() {
+  const nome = document.getElementById("nome").value.trim();
+  const servico = document.getElementById("servico").value;
+
+  if (!nome || !horarioSelecionado) {
+    alert("Preencha o nome e selecione um horário");
+    return;
+  }
+
+  const agenda = JSON.parse(localStorage.getItem("agenda")) || [];
+
+  agenda.push({
+    nome,
+    servico,
+    horario: horarioSelecionado.toLocaleString(),
+    data: horarioSelecionado.toLocaleDateString(),
+    iso: horarioSelecionado.toISOString()
+  });
+
+  localStorage.setItem("agenda", JSON.stringify(agenda));
+
+  alert("Agendamento confirmado!");
+  location.reload();
+}
+
+function carregarAgenda() {
+  const lista = document.getElementById("lista");
+  lista.innerHTML = "";
+
+  const agenda = JSON.parse(localStorage.getItem("agenda")) || [];
+  const porData = {};
+
+  agenda.forEach(a => {
+    porData[a.data] = porData[a.data] || [];
+    porData[a.data].push(a);
+  });
+
+  Object.keys(porData).forEach(data => {
+    const titulo = document.createElement("div");
+    titulo.className = "dataTitulo";
+    titulo.textContent = data;
+    lista.appendChild(titulo);
+
+    porData[data].forEach(a => {
+      const div = document.createElement("div");
+      div.className = "agendamento";
+      div.innerHTML = `
+        👤 <b>${a.nome}</b><br>
+        ✂ ${a.servico}<br>
+        🕒 ${a.horario}<br>
+        <button class="cancelar" onclick="cancelar('${a.iso}')">Cancelar</button>
+      `;
+      lista.appendChild(div);
+    });
+  });
+}
+
+function cancelar(iso) {
+  let agenda = JSON.parse(localStorage.getItem("agenda")) || [];
+  agenda = agenda.filter(a => a.iso !== iso);
+  localStorage.setItem("agenda", JSON.stringify(agenda));
+  carregarAgenda();
+}
+
+function exportar() {
+  const agenda = JSON.parse(localStorage.getItem("agenda")) || [];
+  let texto = "AGENDA DA BARBEARIA\n\n";
+
+  agenda.forEach(a => {
+    texto += `${a.data} - ${a.horario}\n${a.nome} | ${a.servico}\n\n`;
+  });
+
+  alert(texto);
+}
+</script>
+
+</body>
+</html>
