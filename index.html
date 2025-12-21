@@ -253,16 +253,30 @@
     }
 
     async function confirmarAgendamento() {
-        const nome = document.getElementById("nome-cliente").value;
-        const barberId = document.getElementById("select-barbeiro").value;
-        const data = document.getElementById("data-agenda").value;
-        const servico = document.getElementById("select-servico").value;
-        if(!nome || !horarioSelecionado) return alert("Preencha nome e horário!");
-        
-        await db.collection("agenda").add({ cliente: nome, barbeiroId, data, hora: horarioSelecionado, servico, criadoEm: new Date() });
-        alert("✅ Reservado com sucesso!");
-        location.reload();
+    const nome = document.getElementById("nome-cliente").value;
+    const barberId = document.getElementById("select-barbeiro").value;
+    const data = document.getElementById("data-agenda").value;
+    const servico = document.getElementById("select-servico").value;
+
+    if(!nome || !horarioSelecionado || !barberId) {
+        return alert("Preencha seu nome e escolha um horário!");
     }
+
+    try {
+        await db.collection("agenda").add({
+            cliente: nome,
+            barbeiroId: barberId,
+            data: data,
+            hora: horarioSelecionado,
+            servico: servico,
+            criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        alert("✅ Agendado com sucesso!");
+        location.reload();
+    } catch (e) {
+        alert("Erro ao salvar: " + e.message);
+    }
+}
 
     function switchTab(t) {
         ["agenda", "lista-barbeiros", "cadastro"].forEach(tab => document.getElementById("tab-"+tab).style.display = 'none');
