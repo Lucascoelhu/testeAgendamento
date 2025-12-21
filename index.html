@@ -1,266 +1,314 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Agendamento - Barbearia</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barber Pro - Agendamento</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 
-<style>
-body {
-  font-family: Arial, sans-serif;
-  background: #111;
-  color: #fff;
-  padding: 20px;
-}
+    <style>
+        :root {
+            --primary: #d4af37; /* Dourado Profissional */
+            --bg: #0f0f0f;
+            --card: #1a1a1a;
+            --text: #ffffff;
+            --text-dim: #a0a0a0;
+            --transition: all 0.3s ease;
+        }
 
-.box {
-  max-width: 480px;
-  margin: auto;
-  background: #1e1e1e;
-  padding: 20px;
-  border-radius: 10px;
-}
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
 
-h2 { text-align: center; }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            animation: fadeIn 0.8s;
+        }
 
-label {
-  display: block;
-  margin-top: 10px;
-}
+        .card {
+            background: var(--card);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid #333;
+        }
 
-input, select, button {
-  width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  border-radius: 5px;
-  border: none;
-}
+        h2 { text-align: center; color: var(--primary); margin-bottom: 25px; }
 
-button {
-  background: #27ae60;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  margin-top: 12px;
-}
+        label { font-size: 0.85rem; color: var(--text-dim); margin-top: 15px; display: block; }
 
-.horarios {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 10px;
-}
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #252525;
+            color: #fff;
+            box-sizing: border-box;
+            transition: var(--transition);
+        }
 
-.hora {
-  background: #333;
-  padding: 8px;
-  text-align: center;
-  border-radius: 5px;
-  cursor: pointer;
-}
+        input:focus { border-color: var(--primary); outline: none; }
 
-.hora:hover:not(.ocupada) {
-  background: #27ae60;
-}
+        button {
+            background: var(--primary);
+            color: #000;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin-top: 20px;
+            border: none;
+        }
 
-.hora.selecionada {
-  background: #27ae60;
-  font-weight: bold;
-}
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); }
 
-.hora.ocupada {
-  background: #555;
-  color: #aaa;
-  cursor: not-allowed;
-  text-decoration: line-through;
-}
+        .horarios-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
 
-.agendamento {
-  background: #2c2c2c;
-  padding: 12px;
-  border-radius: 8px;
-  margin-top: 10px;
-}
+        .hora-btn {
+            background: #222;
+            padding: 10px;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid #333;
+            font-size: 0.9rem;
+        }
 
-.dataTitulo {
-  margin-top: 20px;
-  font-weight: bold;
-  color: #27ae60;
-}
+        .hora-btn.disponivel:hover { border-color: var(--primary); color: var(--primary); }
+        .hora-btn.ocupada { opacity: 0.3; text-decoration: line-through; cursor: not-allowed; }
+        .hora-btn.selecionada { background: var(--primary); color: #000; font-weight: bold; }
 
-.cancelar {
-  background: #c0392b;
-  margin-top: 8px;
-}
-</style>
+        .barbeiro-card {
+            border: 1px solid #333;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .whatsapp-btn {
+            background: #25d366;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.8rem;
+        }
+
+        /* Admin Styles */
+        .admin-section { display: none; margin-top: 30px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { flex: 1; text-align: center; cursor: pointer; padding: 10px; border-bottom: 2px solid #333; }
+        .tab.active { border-color: var(--primary); color: var(--primary); }
+    </style>
 </head>
-
 <body>
 
-<!-- CLIENTE -->
-<div class="box" id="cliente">
-  <h2>Agendar Corte</h2>
+<div class="container">
+    <div id="view-cliente" class="card">
+        <h2>✂️ Barber Pro</h2>
+        
+        <label>Escolha o Barbeiro</label>
+        <select id="select-barbeiro" onchange="atualizarServicos()"></select>
 
-  <label>Nome</label>
-  <input type="text" id="nome">
+        <label>Serviço</label>
+        <select id="select-servico"></select>
 
-  <label>Serviço</label>
-  <select id="servico">
-    <option>Corte - R$ 35</option>
-    <option>Corte + Barba - R$ 40</option>
-  </select>
+        <label>Sua Data</label>
+        <input type="date" id="data-agenda" onchange="gerarHorarios()">
 
-  <label>Data</label>
-  <input type="date" id="data" onchange="gerarHorarios()">
+        <label>Horários Disponíveis</label>
+        <div class="horarios-grid" id="grid-horarios"></div>
 
-  <label>Horários disponíveis</label>
-  <div class="horarios" id="horarios"></div>
+        <label>Seu Nome</label>
+        <input type="text" id="nome-cliente" placeholder="Como quer ser chamado?">
 
-  <button onclick="agendar()">Confirmar Agendamento</button>
-</div>
+        <button onclick="confirmarAgendamento()">RESERVAR AGORA</button>
+        
+        <div id="contato-barbeiro" style="margin-top:20px; text-align:center"></div>
+    </div>
 
-<!-- ADMIN -->
-<div class="box" id="admin" style="display:none">
-  <h2>Agenda</h2>
-  <button onclick="exportar()">Exportar agenda</button>
-  <div id="lista"></div>
+    <div id="view-admin" class="card admin-section">
+        <h2>Painel Administrativo</h2>
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('agenda')">Agenda</div>
+            <div class="tab" onclick="switchTab('barbeiros')">Barbeiros</div>
+        </div>
+
+        <div id="tab-agenda">
+            <div id="lista-agendamentos"></div>
+        </div>
+
+        <div id="tab-barbeiros" style="display:none">
+            <input id="new-barber-name" placeholder="Nome do Barbeiro">
+            <input id="new-barber-whats" placeholder="WhatsApp (ex: 5511999999999)">
+            <textarea id="new-barber-services" placeholder="Serviço:Preço (Um por linha). Ex: Corte:35" style="width:100%; background:#252525; color:#fff; border-radius:8px; margin-top:10px; padding:10px"></textarea>
+            <button onclick="cadastrarBarbeiro()">Adicionar Barbeiro</button>
+            <div id="lista-barbeiros-admin" style="margin-top:20px"></div>
+        </div>
+    </div>
 </div>
 
 <script>
-const SENHA_ADMIN = "1234";
-let horarioSelecionado = null;
+    // CONFIGURAÇÃO FIREBASE
+    const firebaseConfig = {
+  	apiKey: "AIzaSyC0x8q1N7R70BYhfd2daedBjRKH0qupJiI",
+  	authDomain: "elnes-720ce.firebaseapp.com",
+  	projectId: "elnes-720ce",
+  	storageBucket: "elnes-720ce.firebasestorage.app",
+  	messagingSenderId: "839018097076",
+  	appId: "1:839018097076:web:cc902e9081e3a35cac2ae1"
+	};
 
-const params = new URLSearchParams(window.location.search);
-const isAdmin = params.has("admin");
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-if (isAdmin) {
-  const senha = prompt("Digite a senha do admin:");
-  if (senha !== SENHA_ADMIN) {
-    alert("Senha incorreta");
-    window.location.href = window.location.pathname;
-  } else {
-    document.getElementById("cliente").style.display = "none";
-    document.getElementById("admin").style.display = "block";
-    carregarAgenda();
-  }
-}
+    let barbeirosData = [];
+    let horarioSelecionado = null;
 
-function gerarHorarios() {
-  const container = document.getElementById("horarios");
-  container.innerHTML = "";
-  horarioSelecionado = null;
+    // Inicialização
+    window.onload = async () => {
+        const params = new URLSearchParams(location.search);
+        if(params.has("admin")) {
+            document.getElementById("view-cliente").style.display = "none";
+            document.getElementById("view-admin").style.display = "block";
+            carregarAdmin();
+        }
+        await carregarBarbeiros();
+    };
 
-  const data = document.getElementById("data").value;
-  if (!data) return;
-
-  const agenda = JSON.parse(localStorage.getItem("agenda")) || [];
-  const agora = new Date();
-
-  for (let h = 9; h < 19; h++) {
-    for (let m of [0, 30]) {
-      const horaStr = `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
-      const dataHora = new Date(`${data}T${horaStr}`);
-
-      // Bloqueio de 2h
-      if ((dataHora - agora) / 36e5 < 2) continue;
-
-      const ocupado = agenda.some(a =>
-        Math.abs(dataHora - new Date(a.iso)) / 60000 < 30
-      );
-
-      const div = document.createElement("div");
-      div.className = "hora";
-      div.textContent = horaStr;
-
-      if (ocupado) {
-        div.classList.add("ocupada");
-      } else {
-        div.onclick = () => {
-          document.querySelectorAll(".hora").forEach(h => h.classList.remove("selecionada"));
-          div.classList.add("selecionada");
-          horarioSelecionado = dataHora;
-        };
-      }
-
-      container.appendChild(div);
+    async function carregarBarbeiros() {
+        const snap = await db.collection("barbeiros").get();
+        barbeirosData = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        
+        const select = document.getElementById("select-barbeiro");
+        select.innerHTML = '<option value="">Selecione um profissional</option>';
+        barbeirosData.forEach(b => {
+            select.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
+        });
     }
-  }
-}
 
-function agendar() {
-  const nome = document.getElementById("nome").value.trim();
-  const servico = document.getElementById("servico").value;
+    function atualizarServicos() {
+        const id = document.getElementById("select-barbeiro").value;
+        const barbeiro = barbeirosData.find(b => b.id === id);
+        const servSelect = document.getElementById("select-servico");
+        const contatoDiv = document.getElementById("contato-barbeiro");
+        
+        servSelect.innerHTML = "";
+        if(barbeiro) {
+            barbeiro.servicos.split('\n').forEach(s => {
+                servSelect.innerHTML += `<option>${s}</option>`;
+            });
+            contatoDiv.innerHTML = `<a href="https://wa.me/${barbeiro.whatsapp}" target="_blank" class="whatsapp-btn">💬 Falar com ${barbeiro.nome}</a>`;
+            gerarHorarios();
+        }
+    }
 
-  if (!nome || !horarioSelecionado) {
-    alert("Preencha o nome e selecione um horário");
-    return;
-  }
+    async function gerarHorarios() {
+        const container = document.getElementById("grid-horarios");
+        const data = document.getElementById("data-agenda").value;
+        const barberId = document.getElementById("select-barbeiro").value;
+        
+        if(!data || !barberId) return;
+        container.innerHTML = "Carregando...";
 
-  const agenda = JSON.parse(localStorage.getItem("agenda")) || [];
+        const snap = await db.collection("agenda").where("data", "==", data).where("barbeiroId", "==", barberId).get();
+        const ocupados = snap.docs.map(d => d.data().hora);
 
-  agenda.push({
-    nome,
-    servico,
-    horario: horarioSelecionado.toLocaleString(),
-    data: horarioSelecionado.toLocaleDateString(),
-    iso: horarioSelecionado.toISOString()
-  });
+        container.innerHTML = "";
+        for(let h=9; h<19; h++) {
+            for(let m of ["00", "30"]) {
+                const hora = `${h}:${m}`;
+                const div = document.createElement("div");
+                div.className = "hora-btn " + (ocupados.includes(hora) ? "ocupada" : "disponivel");
+                div.textContent = hora;
+                
+                if(!ocupados.includes(hora)) {
+                    div.onclick = () => {
+                        document.querySelectorAll(".hora-btn").forEach(el => el.classList.remove("selecionada"));
+                        div.classList.add("selecionada");
+                        horarioSelecionado = hora;
+                    };
+                }
+                container.appendChild(div);
+            }
+        }
+    }
 
-  localStorage.setItem("agenda", JSON.stringify(agenda));
+    async function confirmarAgendamento() {
+        const nome = document.getElementById("nome-cliente").value;
+        const barberId = document.getElementById("select-barbeiro").value;
+        const servico = document.getElementById("select-servico").value;
+        const data = document.getElementById("data-agenda").value;
 
-  alert("Agendamento confirmado!");
-  location.reload();
-}
+        if(!nome || !horarioSelecionado) return alert("Preencha todos os campos!");
 
-function carregarAgenda() {
-  const lista = document.getElementById("lista");
-  lista.innerHTML = "";
+        await db.collection("agenda").add({
+            cliente: nome,
+            barbeiroId: barberId,
+            servico,
+            data,
+            hora: horarioSelecionado,
+            timestamp: new Date()
+        });
 
-  const agenda = JSON.parse(localStorage.getItem("agenda")) || [];
-  const porData = {};
+        alert("✅ Horário agendado com sucesso!");
+        location.reload();
+    }
 
-  agenda.forEach(a => {
-    porData[a.data] = porData[a.data] || [];
-    porData[a.data].push(a);
-  });
+    // FUNÇÕES ADMIN
+    function switchTab(tab) {
+        document.getElementById("tab-agenda").style.display = tab === 'agenda' ? 'block' : 'none';
+        document.getElementById("tab-barbeiros").style.display = tab === 'barbeiros' ? 'block' : 'none';
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        event.target.classList.add("active");
+    }
 
-  Object.keys(porData).forEach(data => {
-    const titulo = document.createElement("div");
-    titulo.className = "dataTitulo";
-    titulo.textContent = data;
-    lista.appendChild(titulo);
+    async function cadastrarBarbeiro() {
+        const nome = document.getElementById("new-barber-name").value;
+        const whatsapp = document.getElementById("new-barber-whats").value;
+        const servicos = document.getElementById("new-barber-services").value;
 
-    porData[data].forEach(a => {
-      const div = document.createElement("div");
-      div.className = "agendamento";
-      div.innerHTML = `
-        👤 <b>${a.nome}</b><br>
-        ✂ ${a.servico}<br>
-        🕒 ${a.horario}<br>
-        <button class="cancelar" onclick="cancelar('${a.iso}')">Cancelar</button>
-      `;
-      lista.appendChild(div);
-    });
-  });
-}
+        await db.collection("barbeiros").add({ nome, whatsapp, servicos });
+        alert("Barbeiro cadastrado!");
+        location.reload();
+    }
 
-function cancelar(iso) {
-  let agenda = JSON.parse(localStorage.getItem("agenda")) || [];
-  agenda = agenda.filter(a => a.iso !== iso);
-  localStorage.setItem("agenda", JSON.stringify(agenda));
-  carregarAgenda();
-}
-
-function exportar() {
-  const agenda = JSON.parse(localStorage.getItem("agenda")) || [];
-  let texto = "AGENDA DA BARBEARIA\n\n";
-
-  agenda.forEach(a => {
-    texto += `${a.data} - ${a.horario}\n${a.nome} | ${a.servico}\n\n`;
-  });
-
-  alert(texto);
-}
+    function carregarAdmin() {
+        db.collection("agenda").orderBy("data").onSnapshot(snap => {
+            const lista = document.getElementById("lista-agendamentos");
+            lista.innerHTML = "";
+            snap.forEach(doc => {
+                const ag = doc.data();
+                lista.innerHTML += `
+                    <div class="barbeiro-card animate__animated animate__fadeIn">
+                        <div>
+                            <b>${ag.data} às ${ag.hora}</b><br>
+                            ${ag.cliente} - ${ag.servico}
+                        </div>
+                    </div>
+                `;
+            });
+        });
+    }
 </script>
-
 </body>
 </html>
