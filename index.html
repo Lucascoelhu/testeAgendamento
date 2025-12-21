@@ -24,20 +24,16 @@
         button { width: 100%; padding: 16px; border-radius: 12px; background: var(--primary); color: #000; font-weight: 800; font-size: 1rem; border: none; margin-top: 20px; cursor: pointer; transition: 0.2s; }
         button:active { transform: scale(0.96); }
 
-        /* Estilo Abas */
         .tabs { display: flex; background: #202020; border-radius: 12px; padding: 5px; margin-bottom: 20px; }
         .tab { flex: 1; text-align: center; padding: 10px; font-size: 0.85rem; border-radius: 8px; color: #888; font-weight: 600; cursor: pointer; }
         .tab.active { background: var(--primary); color: #000; }
         
-        /* Itens de Lista */
         .agendamento-item { background: #202020; padding: 15px; border-radius: 14px; margin-bottom: 12px; border-left: 5px solid var(--primary); position: relative; }
         .btn-apagar { position: absolute; top: 15px; right: 15px; background: #301010; color: var(--danger); width: 35px; height: 35px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
         
         .info-label { color: var(--primary); font-size: 0.7rem; text-transform: uppercase; font-weight: 700; display: block; margin-top: 4px; }
         .info-valor { color: #fff; font-size: 1rem; display: block; margin-bottom: 5px; }
-        .barbeiro-header { color: var(--primary); font-weight: 700; margin: 20px 0 10px 0; display: block; border-bottom: 1px solid #333; padding-bottom: 5px; }
-
-        /* Grid Horários Cliente */
+        
         .horarios-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
         .hora-btn { background: #252525; padding: 12px 5px; text-align: center; border-radius: 10px; border: 1px solid #333; font-size: 0.9rem; font-weight: 600; color: #fff; cursor: pointer; }
         .hora-btn.selecionada { background: var(--primary); color: #000; }
@@ -196,16 +192,13 @@
         document.getElementById("tab-agenda").style.display = (t === 'agenda') ? 'block' : 'none';
         document.getElementById("tab-equipe").style.display = (t === 'equipe') ? 'block' : 'none';
         document.getElementById("tab-cadastro").style.display = (t === 'cadastro') ? 'block' : 'none';
-        
         document.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
         event.currentTarget.classList.add("active");
-
         if(t === 'equipe') carregarListaEquipe();
     }
 
     async function carregarListaEquipe() {
         const container = document.getElementById("lista-barbeiros-equipe");
-        container.innerHTML = "Carregando equipe...";
         const snap = await db.collection("barbeiros").get();
         container.innerHTML = "";
         snap.forEach(doc => {
@@ -214,8 +207,6 @@
                 <div class="agendamento-item animate__animated animate__fadeIn">
                     <span class="info-label">PROFISSIONAL</span>
                     <span class="info-valor">${b.nome}</span>
-                    <span class="info-label">WHATSAPP</span>
-                    <span class="info-valor">${b.whatsapp}</span>
                     <button class="btn-apagar" onclick="excluirBarbeiro('${doc.id}')">✖</button>
                 </div>`;
         });
@@ -234,31 +225,33 @@
             const container = document.getElementById("lista-agendamentos");
             container.innerHTML = "";
             let lista = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
-            lista.sort((a,b) => a.data !== b.data ? a.data.localeCompare(b.data) : a.hora.localeCompare(b.hora));
             
-            const agrupado = {};
-            lista.forEach(ag => {
-                if(!agrupado[ag.barbeiroId]) agrupado[ag.barbeiroId] = [];
-                agrupado[ag.barbeiroId].push(ag);
+            // ORDENAÇÃO POR DATA E DEPOIS POR HORA
+            lista.sort((a,b) => {
+                if(a.data !== b.data) return a.data.localeCompare(b.data);
+                return a.hora.localeCompare(b.hora);
             });
 
-            for (const bID in agrupado) {
-                const bNome = barbeirosData.find(b => b.id === bID)?.nome || "Profissional";
-                let html = `<span class="barbeiro-header">👤 ${bNome}</span>`;
-                agrupado[bID].forEach(ag => {
-                    html += `
-                        <div class="agendamento-item animate__animated animate__fadeIn">
-                            <span class="info-label">CLIENTE</span>
-                            <span class="info-valor">${ag.cliente}</span>
-                            <span class="info-label">HORÁRIO E DATA</span>
-                            <span class="info-valor">🕒 ${ag.hora} — 📅 ${ag.data.split('-').reverse().join('/')}</span>
-                            <span class="info-label">SERVIÇO</span>
-                            <span class="info-valor">✂️ ${ag.servico || 'Não informado'}</span>
-                            <button class="btn-apagar" onclick="apagarAgendamento('${ag.id}')">✖</button>
-                        </div>`;
-                });
-                container.innerHTML += html;
+            if(lista.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#888;">Nenhum agendamento encontrado.</p>';
+                return;
             }
+
+            lista.forEach(ag => {
+                const bNome = barbeirosData.find(b => b.id === ag.barbeiroId)?.nome || "Barbeiro";
+                container.innerHTML += `
+                    <div class="agendamento-item animate__animated animate__fadeIn">
+                        <span class="info-label">HORÁRIO E DATA</span>
+                        <span class="info-valor">🕒 ${ag.hora} — 📅 ${ag.data.split('-').reverse().join('/')}</span>
+                        <span class="info-label">CLIENTE</span>
+                        <span class="info-valor">${ag.cliente}</span>
+                        <span class="info-label">BARBEIRO</span>
+                        <span class="info-valor">👤 ${bNome}</span>
+                        <span class="info-label">SERVIÇO</span>
+                        <span class="info-valor">✂️ ${ag.servico || 'Não informado'}</span>
+                        <button class="btn-apagar" onclick="apagarAgendamento('${ag.id}')">✖</button>
+                    </div>`;
+            });
         });
     }
 
