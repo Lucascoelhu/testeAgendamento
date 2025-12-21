@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>El Negrones - Agendamento Premium</title>
+    <title>El Negrones</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -12,114 +12,49 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 
     <style>
-        :root { 
-            --primary: #d4af37; 
-            --bg: #0b0b0b; 
-            --card: #1a1a1a; 
-            --input-bg: #252525;
-            --text: #ffffff; 
-        }
-
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: var(--bg); 
-            color: var(--text); 
-            margin: 0; 
-            padding: 10px; 
-        }
-
+        :root { --primary: #d4af37; --bg: #0b0b0b; --card: #1a1a1a; --input-bg: #252525; --text: #ffffff; --danger: #ff4757; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; }
         .container { max-width: 480px; margin: auto; padding-bottom: 40px; }
 
-        .header { text-align: center; padding: 25px 0; }
-        .header h1 { font-weight: 800; color: var(--primary); font-size: 2rem; margin: 0; text-transform: uppercase; }
+        .header { text-align: center; padding: 25px 0; user-select: none; -webkit-user-select: none; }
+        .header h1 { font-weight: 800; color: var(--primary); font-size: 2rem; margin: 0; text-transform: uppercase; cursor: pointer; }
 
-        .card { 
-            background: var(--card); 
-            padding: 24px; 
-            border-radius: 28px; 
-            border: 1px solid #282828; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        .card { background: var(--card); padding: 24px; border-radius: 28px; border: 1px solid #282828; box-shadow: 0 20px 40px rgba(0,0,0,0.4); margin-bottom: 20px; }
+        label { font-size: 0.8rem; color: var(--primary); font-weight: 800; text-transform: uppercase; margin-bottom: 10px; display: block; }
+
+        input, select, textarea { 
+            width: 100%; padding: 18px; margin-bottom: 20px; border-radius: 18px; 
+            border: 1px solid #333; background: var(--input-bg); color: #fff; font-size: 1rem;
+            box-sizing: border-box; appearance: none;
         }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
 
-        /* Padronização dos Títulos dos Campos */
-        label { 
-            font-size: 0.8rem; 
-            color: var(--primary); 
-            font-weight: 800; 
-            text-transform: uppercase; 
-            margin-bottom: 10px; 
-            display: block; 
-            letter-spacing: 0.5px;
-        }
-
-        /* Padronização de Inputs, Selects e Data */
-        input, select { 
-            width: 100%; 
-            padding: 18px; 
-            margin-bottom: 20px; 
-            border-radius: 18px; /* Bordas bem arredondadas como na imagem */
-            border: 1px solid #333; 
-            background: var(--input-bg); 
-            color: #fff; 
-            font-size: 1rem;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-            appearance: none; /* Remove estilo padrão do navegador */
-        }
-
-        /* Ajuste específico para o seletor de data (ícone do calendário) */
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1); /* Deixa o ícone branco */
-            cursor: pointer;
-        }
-
-        input::placeholder { color: #666; }
-
-        /* Grid de Horários */
         .horarios-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .hora-btn { 
-            background: var(--input-bg); 
-            padding: 15px 5px; 
-            text-align: center; 
-            border-radius: 14px; 
-            border: 1px solid #333; 
-            font-size: 0.95rem; 
-            font-weight: 600; 
-            color: #fff; 
-            cursor: pointer; 
-        }
-        .hora-btn.selecionada { background: var(--primary); color: #000; border-color: var(--primary); }
+        .hora-btn { background: var(--input-bg); padding: 15px 5px; text-align: center; border-radius: 14px; border: 1px solid #333; font-weight: 600; color: #fff; cursor: pointer; }
+        .hora-btn.selecionada { background: var(--primary); color: #000; }
         .hora-btn.ocupada { opacity: 0.15; text-decoration: line-through; pointer-events: none; }
 
-        button.btn-principal { 
-            width: 100%; 
-            padding: 20px; 
-            border-radius: 20px; 
-            background: var(--primary); 
-            color: #000; 
-            font-weight: 800; 
-            font-size: 1.1rem; 
-            border: none; 
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: 0.3s;
-        }
-        button.btn-principal:active { transform: scale(0.98); }
+        button.btn-principal { width: 100%; padding: 20px; border-radius: 20px; background: var(--primary); color: #000; font-weight: 800; text-transform: uppercase; border: none; cursor: pointer; }
 
-        #modal-sucesso {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 100; align-items: center; justify-content: center; text-align: center;
-        }
+        /* Estilos Admin */
+        .tabs { display: flex; background: #202020; border-radius: 14px; padding: 5px; margin-bottom: 20px; }
+        .tab { flex: 1; text-align: center; padding: 12px; font-size: 0.85rem; border-radius: 10px; color: #888; cursor: pointer; }
+        .tab.active { background: var(--primary); color: #000; font-weight: bold; }
+        .agendamento-item { background: #252525; padding: 18px; border-radius: 20px; margin-bottom: 12px; border-left: 5px solid var(--primary); position: relative; }
+        .btn-apagar { position: absolute; top: 15px; right: 15px; background: rgba(255, 71, 87, 0.1); color: var(--danger); width: 35px; height: 35px; border-radius: 50%; border: none; font-size: 1.2rem; cursor: pointer; }
+        .servico-destaque { color: var(--primary); font-weight: 800; font-size: 1.1rem; display: block; margin-top: 5px; }
+
+        #modal-sucesso, #modal-login { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; align-items: center; justify-content: center; text-align: center; padding: 20px; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="view-cliente" class="animate__animated animate__fadeIn">
-        <div class="header">
-            <h1>EL NEGRONES</h1>
-        </div>
+    <div class="header">
+        <h1 id="gatilho-admin">EL NEGRONES</h1>
+    </div>
 
+    <div id="view-cliente" class="animate__animated animate__fadeIn">
         <div class="card">
             <label>1. Profissional</label>
             <select id="select-barbeiro" onchange="atualizarServicos()">
@@ -143,18 +78,48 @@
             <button class="btn-principal" onclick="confirmarAgendamento()">Confirmar Agendamento</button>
         </div>
     </div>
+
+    <div id="view-admin" style="display:none" class="animate__animated animate__fadeIn">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('agenda')">Agenda</div>
+            <div class="tab" onclick="switchTab('equipe')">Equipe</div>
+            <div class="tab" onclick="switchTab('cadastro')">Novo</div>
+        </div>
+        
+        <div id="tab-agenda"><div id="lista-agendamentos"></div></div>
+        
+        <div id="tab-equipe" style="display:none"><div id="lista-barbeiros-equipe"></div></div>
+
+        <div id="tab-cadastro" style="display:none">
+            <div class="card">
+                <input id="new-name" placeholder="Nome do Barbeiro">
+                <input id="new-whats" placeholder="WhatsApp">
+                <textarea id="new-servs" rows="5" placeholder="Corte - R$ 30"></textarea>
+                <button class="btn-principal" onclick="cadastrarBarbeiro()">CADASTRAR BARBEIRO</button>
+            </div>
+        </div>
+        <button onclick="location.reload()" style="background:none; color:#555; border:none; width:100%; margin-top:20px;">Sair do Painel</button>
+    </div>
+</div>
+
+<div id="modal-login">
+    <div class="animate__animated animate__fadeInDown" style="width: 100%; max-width: 300px;">
+        <label>Acesso Restrito</label>
+        <input type="password" id="input-senha" placeholder="Digite a senha" style="text-align: center;">
+        <button class="btn-principal" onclick="verificarSenha()">Entrar</button>
+        <button onclick="fecharLogin()" style="background:none; color:#888; border:none; margin-top:15px;">Cancelar</button>
+    </div>
 </div>
 
 <div id="modal-sucesso">
     <div class="animate__animated animate__zoomIn">
-        <div style="font-size: 80px; margin-bottom: 20px;">✅</div>
-        <h2 style="color: #fff;">Agendado com Sucesso!</h2>
-        <button class="btn-principal" style="width: 200px; margin-top: 30px;" onclick="location.reload()">OK</button>
+        <div style="font-size: 80px;">✅</div>
+        <h2>Agendado!</h2>
+        <button class="btn-principal" style="width: 150px;" onclick="location.reload()">OK</button>
     </div>
 </div>
 
 <script>
-    // Mantenha suas configurações do Firebase aqui
     const firebaseConfig = {
         apiKey: "AIzaSyC0x8q1N7R70BYhfd2daedBjRKH0qupJiI",
         authDomain: "elnes-720ce.firebaseapp.com",
@@ -166,19 +131,55 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    
+    // --- CONFIGURAÇÃO DE ACESSO ---
+    const SENHA_ADMIN = "4321"; // <--- ALTERE SUA SENHA AQUI
+    
+    let timer;
+    const btnGatilho = document.getElementById('gatilho-admin');
+    
+    btnGatilho.addEventListener('mousedown', () => timer = setTimeout(abrirModalLogin, 3000));
+    btnGatilho.addEventListener('touchstart', () => timer = setTimeout(abrirModalLogin, 3000));
+    btnGatilho.addEventListener('mouseup', () => clearTimeout(timer));
+    btnGatilho.addEventListener('touchend', () => clearTimeout(timer));
+
+    function abrirModalLogin() {
+        document.getElementById("modal-login").style.display = "flex";
+        document.getElementById("input-senha").focus();
+    }
+
+    function fecharLogin() {
+        document.getElementById("modal-login").style.display = "none";
+        document.getElementById("input-senha").value = "";
+    }
+
+    function verificarSenha() {
+        const senhaDigitada = document.getElementById("input-senha").value;
+        if(senhaDigitada === SENHA_ADMIN) {
+            fecharLogin();
+            abrirAdmin();
+        } else {
+            alert("Senha incorreta!");
+            fecharLogin();
+        }
+    }
+
+    function abrirAdmin() {
+        document.getElementById("view-cliente").style.display = "none";
+        document.getElementById("view-admin").style.display = "block";
+        carregarAdminAgenda();
+    }
+
+    // --- LOGICA CLIENTE E FIREBASE ---
     let barbeirosData = [];
     let horarioSelecionado = null;
 
-    // Funções de carregar barbeiros, serviços e horários (as mesmas do código anterior)
     window.onload = async () => {
         const snap = await db.collection("barbeiros").get();
         barbeirosData = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
         const select = document.getElementById("select-barbeiro");
         barbeirosData.forEach(b => select.innerHTML += `<option value="${b.id}">${b.nome}</option>`);
-        
-        // Bloqueia datas passadas no input de data
-        const hoje = new Date().toISOString().split("T")[0];
-        document.getElementById('data-agenda').min = hoje;
+        document.getElementById('data-agenda').min = new Date().toISOString().split("T")[0];
     };
 
     function atualizarServicos() {
@@ -196,17 +197,14 @@
         const barberId = document.getElementById("select-barbeiro").value;
         const grid = document.getElementById("grid-horarios");
         if(!dataStr || !barberId) return;
-        
         const snap = await db.collection("agenda").where("data", "==", dataStr).where("barbeiroId", "==", barberId).get();
         const ocupados = snap.docs.map(d => d.data().hora);
-
         grid.innerHTML = "";
         for(let h=9; h<20; h++) {
             ["00", "30"].forEach(m => {
                 const horaStr = (h < 10 ? "0"+h : h) + ":" + m;
                 const div = document.createElement("div");
-                div.className = "hora-btn";
-                if(ocupados.includes(horaStr)) div.classList.add("ocupada");
+                div.className = "hora-btn " + (ocupados.includes(horaStr) ? "ocupada" : "");
                 div.textContent = horaStr;
                 div.onclick = () => {
                     document.querySelectorAll(".hora-btn").forEach(e => e.classList.remove("selecionada"));
@@ -223,18 +221,71 @@
         const barberId = document.getElementById("select-barbeiro").value;
         const data = document.getElementById("data-agenda").value;
         const servico = document.getElementById("select-servico").value;
-
-        if(!nome || !horarioSelecionado || !data || !servico) {
-            alert("Por favor, preencha todos os campos.");
-            return;
-        }
-
-        await db.collection("agenda").add({
-            cliente: nome, barbeiroId: barberId, data: data,
-            hora: horarioSelecionado, servico: servico,
-            criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        if(!nome || !horarioSelecionado || !data || !servico) return alert("Preencha tudo!");
+        await db.collection("agenda").add({ cliente: nome, barbeiroId: barberId, data: data, hora: horarioSelecionado, servico: servico, criadoEm: firebase.firestore.FieldValue.serverTimestamp() });
         document.getElementById("modal-sucesso").style.display = "flex";
+    }
+
+    // --- FUNÇÕES ADMIN ---
+    function switchTab(t) {
+        document.getElementById("tab-agenda").style.display = (t === 'agenda') ? 'block' : 'none';
+        document.getElementById("tab-equipe").style.display = (t === 'equipe') ? 'block' : 'none';
+        document.getElementById("tab-cadastro").style.display = (t === 'cadastro') ? 'block' : 'none';
+        document.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
+        if(event) event.currentTarget.classList.add("active");
+        if(t === 'equipe') carregarListaEquipe();
+    }
+
+    async function carregarListaEquipe() {
+        const container = document.getElementById("lista-barbeiros-equipe");
+        const snap = await db.collection("barbeiros").get();
+        container.innerHTML = "";
+        snap.forEach(doc => {
+            const b = doc.data();
+            container.innerHTML += `
+                <div class="agendamento-item">
+                    ${b.nome}
+                    <textarea id="edit-servs-${doc.id}" style="margin-top:10px; height:80px; width:100%; background:#1a1a1a; color:white; border:1px solid #333; padding:10px; border-radius:10px;">${b.servicos}</textarea>
+                    <button class="btn-principal" style="padding:10px; font-size:0.8rem; background:#2ecc71" onclick="salvarPrecos('${doc.id}')">SALVAR PREÇOS</button>
+                    <button class="btn-apagar" onclick="excluirBarbeiro('${doc.id}')">✖</button>
+                </div>`;
+        });
+    }
+
+    async function salvarPrecos(id) {
+        const novos = document.getElementById(`edit-servs-${id}`).value;
+        await db.collection("barbeiros").doc(id).update({ servicos: novos });
+        alert("Preços atualizados!");
+    }
+
+    function carregarAdminAgenda() {
+        db.collection("agenda").onSnapshot(snap => {
+            const container = document.getElementById("lista-agendamentos");
+            container.innerHTML = "";
+            let lista = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+            lista.sort((a,b) => (a.data !== b.data) ? a.data.localeCompare(b.data) : a.hora.localeCompare(b.hora));
+            lista.forEach(ag => {
+                const bNome = barbeirosData.find(b => b.id === ag.barbeiroId)?.nome || "Barbeiro";
+                container.innerHTML += `
+                    <div class="agendamento-item">
+                        🕒 ${ag.hora} — ${ag.cliente} (${ag.data.split('-').reverse().join('/')})
+                        <span class="servico-destaque">✂️ ${ag.servico}</span>
+                        <small>Profissional: ${bNome}</small>
+                        <button class="btn-apagar" onclick="apagarAgendamento('${ag.id}')">✖</button>
+                    </div>`;
+            });
+        });
+    }
+
+    async function apagarAgendamento(id) { if(confirm("Excluir?")) await db.collection("agenda").doc(id).delete(); }
+    async function excluirBarbeiro(id) { if(confirm("Excluir Barbeiro?")) await db.collection("barbeiros").doc(id).delete(); carregarListaEquipe(); }
+    async function cadastrarBarbeiro() {
+        const nome = document.getElementById("new-name").value;
+        const whats = document.getElementById("new-whats").value;
+        const servs = document.getElementById("new-servs").value;
+        await db.collection("barbeiros").add({ nome, whatsapp: whats, servicos: servs });
+        alert("Cadastrado!");
+        switchTab('equipe');
     }
 </script>
 </body>
