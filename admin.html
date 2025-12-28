@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin Premium | El Negrones</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #c5a059; 
+            --primary-dark: #a68549;
+            --bg: #050505; 
+            --card: #111111;
+            --input-bg: #1a1a1a; 
+            --text: #ffffff; 
+            --text-dim: #a0a0a0;
+            --danger: #ff4d4d; 
+            --success: #00ff88; 
+            --blue-action: #0095ff;
+            --grad: linear-gradient(135deg, #c5a059 0%, #a68549 100%);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.4; overflow-x: hidden; padding-bottom: 50px; }
+
+        #modal-login { position: fixed; inset: 0; background: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .login-box { width: 85%; max-width: 340px; text-align: center; padding: 40px 25px; background: var(--card); border-radius: 30px; border: 1px solid #222; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+
+        .top-nav-container { padding: 30px 15px; text-align: center; background: linear-gradient(to bottom, #111, transparent); }
+        .logo-main { font-size: 1.6rem; font-weight: 900; letter-spacing: 5px; color: var(--primary); margin-bottom: 25px; }
+        
+        .tab-bar { background: #161616; padding: 5px; border-radius: 20px; display: flex; max-width: 550px; margin: 0 auto; border: 1px solid #222; }
+        .tab-btn { padding: 12px 5px; border-radius: 15px; color: var(--text-dim); font-size: 0.7rem; font-weight: 600; cursor: pointer; flex: 1; text-align: center; transition: 0.3s; }
+        .tab-btn.active { background: #222; color: var(--primary); }
+        .tab-btn.premium-active { background: var(--grad); color: #000; font-weight: 800; }
+
+        .content { padding: 20px 15px; max-width: 500px; margin: auto; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--card); border-radius: 24px; padding: 22px; margin-bottom: 18px; border: 1px solid #252525; }
+        .client-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .client-name { font-size: 1.1rem; font-weight: 800; color: #fff; text-transform: uppercase; }
+        .badge-time { background: var(--grad); color: #000; padding: 5px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 900; }
+        
+        .agenda-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 15px; border-top: 1px solid #222; margin-top: 10px; }
+        .label-mini { font-size: 0.6rem; font-weight: 800; color: var(--primary); text-transform: uppercase; display: block; margin-bottom: 2px; }
+        .val-highlight { font-size: 0.85rem; font-weight: 600; color: #fff; }
+
+        .filtro-box { margin-bottom: 25px; background: #111; padding: 15px; border-radius: 20px; border: 1px solid #222; }
+
+        label { display: block; font-size: 0.65rem; font-weight: 700; color: var(--primary); margin: 0 0 8px 10px; text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 16px; background: var(--input-bg); border: 1px solid #282828; border-radius: 16px; color: #fff; margin-bottom: 18px; font-size: 0.9rem; }
+        .btn-action { width: 100%; padding: 18px; border-radius: 16px; border: none; background: var(--grad); color: #000; font-weight: 900; text-transform: uppercase; cursor: pointer; text-decoration: none; display: block; text-align: center; }
+        
+        .footer-card { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 12px; border-top: 1px solid #222; }
+        .btn-whatsapp { color: var(--success); text-decoration: none; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+        .btn-del { color: var(--danger); font-size: 0.7rem; font-weight: 800; background: none; border: none; cursor: pointer; text-transform: uppercase; }
+
+        .item-list { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #181818; border-radius: 15px; margin-bottom: 10px; border: 1px solid #222; }
+        .btn-edit { color: var(--blue-action); font-size: 0.7rem; font-weight: 800; background: none; border: none; cursor: pointer; text-transform: uppercase; margin-right: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="modal-login">
+    <div class="login-box">
+        <h1 style="color:var(--primary); font-weight:900; letter-spacing:5px; margin-bottom:10px;">EL NEGRONES</h1>
+        <p style="color:var(--text-dim); font-size:0.7rem; margin-bottom:20px;">ADMINISTRAÇÃO</p>
+        <input type="password" id="senha-login" placeholder="Senha Master" style="text-align: center;">
+        <button class="btn-action" onclick="fazerLogin()">Entrar</button>
+    </div>
+</div>
+
+<div id="main-app" style="display: none;">
+    <div class="top-nav-container">
+        <div class="logo-main">✂️ ADMIN</div>
+        <div class="tab-bar">
+            <div class="tab-btn active" onclick="switchTab('agenda', this)">Agenda</div>
+            <div class="tab-btn" onclick="switchTab('equipe', this)">Equipe</div>
+            <div class="tab-btn" onclick="switchTab('folgas', this)">Folgas</div>
+            <div class="tab-btn" onclick="switchTab('premium', this)">⭐ Plano</div>
+        </div>
+    </div>
+
+    <div class="content">
+        <div id="tab-agenda" class="tab-content">
+            <div class="filtro-box">
+                <label>Filtrar por Barbeiro</label>
+                <select id="filtro-barbeiro-agenda" onchange="carregarAgenda()" style="margin-bottom:0">
+                    <option value="todos">📅 Mostrar Todos</option>
+                </select>
+            </div>
+            <div id="render-agenda"></div>
+        </div>
+
+        <div id="tab-equipe" class="tab-content" style="display: none;">
+            <div class="card">
+                <h3 id="titulo-editor-barbeiro" style="font-size: 0.8rem; margin-bottom: 15px; color: var(--primary);">CADASTRAR NOVO BARBEIRO</h3>
+                <input type="hidden" id="edit-id">
+                <label>Nome do Barbeiro</label>
+                <input id="b-nome" placeholder="Ex: Lucas">
+                <label>Serviços e Preços (Ex: Corte - R$ 35)</label>
+                <textarea id="b-servs" rows="4" placeholder="Corte - R$ 35&#10;Barba - R$ 25&#10;Corte + Barba - R$ 50"></textarea>
+                <button id="btn-salvar-barbeiro" class="btn-action" onclick="salvarBarbeiro()">Adicionar Barbeiro</button>
+                <button id="btn-cancelar-edit" style="display:none; background:none; color:gray; border:none; width:100%; margin-top:10px; font-size:0.7rem; font-weight:bold; cursor:pointer;" onclick="limparFormBarbeiro()">CANCELAR EDIÇÃO</button>
+            </div>
+            <div id="render-equipe"></div>
+        </div>
+
+        <div id="tab-folgas" class="tab-content" style="display: none;">
+            <div class="card">
+                <label>Profissional</label>
+                <select id="f-barbeiro"><option value="">Escolha...</option></select>
+                <label>Data</label>
+                <input type="date" id="f-data">
+                <label>Tipo de Bloqueio</label>
+                <select id="f-tipo" onchange="toggleHoraInput()">
+                    <option value="DIA_TODO">Bloquear Dia Todo</option>
+                    <option value="HORA_UNICA">Bloquear Horário Específico</option>
+                </select>
+                <div id="box-hora-especifica" style="display: none;">
+                    <label>Selecione o Horário</label>
+                    <select id="f-hora-select">
+                        <script>
+                            const hores = ["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00"];
+                            hores.forEach(h => document.write(`<option value="${h}">${h}</option>`));
+                        </script>
+                    </select>
+                </div>
+                <button class="btn-action" style="background:var(--danger); color:#fff" onclick="salvarFolga()">Confirmar Bloqueio</button>
+            </div>
+            <div id="render-folgas"></div>
+        </div>
+
+        <div id="tab-premium" class="tab-content" style="display: none;">
+            <div class="card" style="text-align: center; padding: 40px 15px;">
+                <div style="font-size: 3rem; margin-bottom: 20px;">🏆</div>
+                <h2 style="color:var(--primary); margin-bottom:10px;">Plano Ativo</h2>
+                <p id="txt-restam" style="color:var(--text-dim); margin-bottom:25px;">Verificando assinatura...</p>
+                <a href="https://mpago.la/1bCHsKA" target="_blank" class="btn-action" style="background:var(--blue-action); color:#fff; text-decoration:none;">Renovar Agora</a>
+                <p style="font-size: 0.6rem; color: gray; margin-top: 15px; text-transform: uppercase;">Após o pagamento, o sistema renovará em até 5 minutos.</p>
+                 <p style="font-size: 0.6rem; color: gray; margin-top: 15px; text-transform: uppercase;"> </p> 
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = { 
+        apiKey: "AIzaSyC0x8q1N7R70BYhfd2daedBjRKH0qupJiI",
+        authDomain: "elnes-720ce.firebaseapp.com",
+        projectId: "elnes-720ce",
+        storageBucket: "elnes-720ce.firebasestorage.app",
+        messagingSenderId: "839018097076",
+        appId: "1:839018097076:web:cc902e9081e3a35cac2ae1"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let barbeirosLocal = [];
+
+    function fazerLogin() {
+        if(document.getElementById('senha-login').value === "4321") {
+            document.getElementById('modal-login').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+            const hoje = new Date().toISOString().split('T')[0];
+            document.getElementById('f-data').setAttribute('min', hoje);
+            init();
+        } else alert("Senha incorreta!");
+    }
+
+    function switchTab(tab, el) {
+        document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+        document.getElementById('tab-'+tab).style.display = 'block';
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'premium-active'));
+        if(tab === 'premium') el.classList.add('premium-active');
+        else el.classList.add('active');
+    }
+
+    async function init() {
+        await carregarEquipe(); 
+        carregarAgenda();
+        carregarFolgas();
+        verificarAssinatura();
+    }
+
+    function toggleHoraInput() {
+        const tipo = document.getElementById('f-tipo').value;
+        document.getElementById('box-hora-especifica').style.display = tipo === 'HORA_UNICA' ? 'block' : 'none';
+    }
+
+    async function carregarEquipe() {
+        db.collection("barbeiros").onSnapshot(snap => {
+            barbeirosLocal = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+            const selectFolga = document.getElementById('f-barbeiro');
+            const selectFiltro = document.getElementById('filtro-barbeiro-agenda');
+            const renderEquipe = document.getElementById('render-equipe');
+            
+            selectFolga.innerHTML = '<option value="">Escolha...</option>';
+            selectFiltro.innerHTML = '<option value="todos">📅 Mostrar Todos</option>';
+            renderEquipe.innerHTML = "";
+            
+            barbeirosLocal.forEach(b => {
+                selectFolga.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
+                selectFiltro.innerHTML += `<option value="${b.id}">${b.nome}</option>`;
+                renderEquipe.innerHTML += `
+                <div class="item-list">
+                    <div style="flex:1">
+                        <b>${b.nome}</b>
+                        <p style="font-size:0.6rem; color:gray">${b.servicos ? b.servicos.substring(0, 30)+'...' : 'Sem serviços'}</p>
+                    </div>
+                    <button class="btn-edit" onclick="prepararEdicao('${b.id}')">Editar</button>
+                    <button class="btn-del" onclick="excluir('barbeiros', '${b.id}')">Remover</button>
+                </div>`;
+            });
+        });
+    }
+
+    function prepararEdicao(id) {
+        const b = barbeirosLocal.find(x => x.id === id);
+        document.getElementById('edit-id').value = b.id;
+        document.getElementById('b-nome').value = b.nome;
+        document.getElementById('b-servs').value = b.servicos || "";
+        document.getElementById('titulo-editor-barbeiro').innerText = "EDITANDO: " + b.nome.toUpperCase();
+        document.getElementById('btn-salvar-barbeiro').innerText = "Atualizar Barbeiro";
+        document.getElementById('btn-cancelar-edit').style.display = "block";
+        window.scrollTo(0,0);
+    }
+
+    function limparFormBarbeiro() {
+        document.getElementById('edit-id').value = "";
+        document.getElementById('b-nome').value = "";
+        document.getElementById('b-servs').value = "";
+        document.getElementById('titulo-editor-barbeiro').innerText = "CADASTRAR NOVO BARBEIRO";
+        document.getElementById('btn-salvar-barbeiro').innerText = "Adicionar Barbeiro";
+        document.getElementById('btn-cancelar-edit').style.display = "none";
+    }
+
+    async function salvarBarbeiro() {
+        const ativo = await verificarAssinatura();
+        if(!ativo) return;
+
+        const id = document.getElementById('edit-id').value;
+        const nome = document.getElementById('b-nome').value;
+        const servs = document.getElementById('b-servs').value;
+        
+        if(!nome) return alert("Digite o nome");
+        const dados = { nome, servicos: servs };
+
+        if(id) {
+            await db.collection("barbeiros").doc(id).update(dados);
+            alert("Barbeiro atualizado!");
+        } else {
+            await db.collection("barbeiros").add(dados);
+            alert("Barbeiro cadastrado!");
+        }
+        limparFormBarbeiro();
+    }
+
+    function carregarAgenda() {
+        const filtroId = document.getElementById('filtro-barbeiro-agenda').value;
+        let query = db.collection("agenda").orderBy("data", "asc");
+        if (filtroId !== "todos") query = query.where("barbeiroId", "==", filtroId);
+        query.onSnapshot(snap => {
+            const container = document.getElementById('render-agenda');
+            container.innerHTML = snap.empty ? '<p style="text-align:center; padding:50px; color:gray;">Nenhum agendamento.</p>' : "";
+            snap.docs.forEach(doc => {
+                const ag = doc.data();
+                container.innerHTML += `
+                <div class="card">
+                    <div class="client-header">
+                        <div><span class="label-mini">${ag.data.split('-').reverse().join('/')}</span><h2 class="client-name">${ag.cliente}</h2></div>
+                        <div class="badge-time">${ag.hora}</div>
+                    </div>
+                    <div class="agenda-info-grid">
+                        <div><span class="label-mini">Barbeiro</span><span class="val-highlight">${ag.barbeiroNome}</span></div>
+                        <div><span class="label-mini">Serviço</span><span class="val-highlight" style="color:var(--primary)">${ag.servico}</span></div>
+                    </div>
+                    <div class="footer-card">
+                         <a href="https://wa.me/55${ag.clienteWhatsapp?.replace(/\D/g,'')}" target="_blank" class="btn-whatsapp">📲 WhatsApp</a>
+                        <button class="btn-del" onclick="excluir('agenda', '${doc.id}')">Concluir</button>
+                    </div>
+                </div>`;
+            });
+        });
+    }
+
+    async function salvarFolga() {
+        const bId = document.getElementById('f-barbeiro').value;
+        const data = document.getElementById('f-data').value;
+        const tipo = document.getElementById('f-tipo').value;
+        const hora = document.getElementById('f-hora-select').value;
+        if(!bId || !data) return alert("Selecione barbeiro e data");
+        const valorHora = (tipo === "HORA_UNICA") ? hora : "DIA_TODO";
+        await db.collection("bloqueios").add({ barbeiroId: bId, data: data, hora: valorHora });
+        alert("Bloqueio realizado!");
+    }
+
+    function carregarFolgas() {
+        db.collection("bloqueios").orderBy("data", "desc").limit(8).onSnapshot(snap => {
+            const render = document.getElementById('render-folgas');
+            render.innerHTML = snap.empty ? "" : '<p style="margin:20px 0 10px; font-size:0.6rem; color:gray; text-transform:uppercase;">Bloqueios Ativos</p>';
+            snap.docs.forEach(doc => {
+                const f = doc.data();
+                const b = barbeirosLocal.find(x => x.id === f.barbeiroId);
+                const descHora = f.hora === "DIA_TODO" ? "Dia Todo" : f.hora;
+                render.innerHTML += `<div class="item-list" style="font-size:0.8rem"><span>${b?.nome} - ${f.data.split('-').reverse().join('/')} (${descHora})</span><button class="btn-del" onclick="excluir('bloqueios', '${doc.id}')">Remover</button></div>`;
+            });
+        });
+    }
+
+    async function verificarAssinatura() {
+        const doc = await db.collection("configuracao").doc("assinatura").get();
+        if(doc.exists) {
+            const dataInst = doc.data().dataInstalacao.toDate();
+            const expira = new Date(dataInst);  
+            expira.setDate(expira.getDate() + 7); // Período de 7 dias
+            
+            const hoje = new Date();
+            const resta = Math.ceil((expira - hoje) / (1000 * 60 * 60 * 24));
+
+            if (resta <= 0) {
+                document.body.innerHTML = `
+                    <div style="height:100vh; background:#050505; color:white; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; font-family:'Inter', sans-serif; padding:30px;">
+                        <div style="font-size: 5rem; margin-bottom: 20px;">🔒</div>
+                        <h1 style="color:var(--primary); font-weight:900; letter-spacing:2px;">ASSINATURA EXPIRADA</h1>
+                        <p style="color:#a0a0a0; max-width:350px; margin: 15px 0 30px 0; line-height:1.6;">
+                            O período de licença do sistema <b>El Negrones</b> chegou ao fim. 
+                            Para continuar gerenciando sua agenda, realize o pagamento abaixo.
+                        </p>
+                        <a href="https://mpago.la/1bCHsKA" target="_blank" 
+                           style="background:linear-gradient(135deg, #c5a059 0%, #a68549 100%); color:black; padding:20px 40px; border-radius:15px; text-decoration:none; font-weight:900; width:100%; max-width:300px; box-shadow: 0 10px 20px rgba(197,160,89,0.3);">
+                           RENOVAR AGORA
+                        </a>
+                    </div>
+                `;
+                return false;
+            } else {
+                document.getElementById('txt-restam').innerText = `Licença expira em ${resta} dias.`;
+                return true;
+            }
+        }
+        return true;
+    }
+
+    async function excluir(col, id) { if(confirm("Confirmar exclusão?")) await db.collection(col).doc(id).delete(); }
+</script>
+</body>
+</html>
